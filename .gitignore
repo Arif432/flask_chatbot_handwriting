@@ -2,7 +2,9 @@
 *.pt
 
 # Ignore the run folder
-run/
+runs/
 
 # Ignore the uploads folder
 uploads/
+
+.gitignore
