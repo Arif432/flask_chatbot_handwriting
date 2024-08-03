@@ -1,0 +1,8 @@
+# Ignore all files with .pt extension
+*.pt
+
+# Ignore the run folder
+run/
+
+# Ignore the uploads folder
+uploads/
