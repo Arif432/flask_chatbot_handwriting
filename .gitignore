@@ -8,3 +8,5 @@ runs/
 uploads/
 
 .gitignore
+
+.env
