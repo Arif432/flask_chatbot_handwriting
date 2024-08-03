@@ -1,12 +1,17 @@
 # Ignore all files with .pt extension
 *.pt
 
-# Ignore the run folder
+# Ignore all contents within the runs/detect/ folder
 runs/detect/*
 
-# Ignore the uploads folder
+# Allow the runs/detect/ folder to be committed
+!runs/detect/.gitkeep
+
+# Ignore the uploads folder and its contents
 uploads/
 
-.gitignore
+# Ignore the .gitignore file itself
+!.gitignore
 
+# Ignore the .env file
 .env
