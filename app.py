@@ -7,6 +7,28 @@ from ultralytics import YOLO
 from flask_cors import CORS
 from chatbot_service import get_chatbot_response  # Import chatbot function
 
+app = Flask(__name__)
+app.secret_key = 'your_secret_key'  # Required for session management
+CORS(app)
+app.config['UPLOAD_FOLDER'] = 'uploads'
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    print("hello")
+    user_message = request.json.get('message')
+
+    # Retrieve and update conversation history
+    chat_history = session.get('chat_history', [])
+    chat_history.append(user_message)
+
+    response = get_chatbot_response(user_message)
+    
+    # Save updated history back to session
+    session['chat_history'] = chat_history
+    
+    return jsonify({"response": response})
+
+
 class_mapping = {
     0: '0', 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 
     10: 'A', 11: 'B', 12: 'C', 13: 'D', 14: 'E', 15: 'F', 16: 'G', 17: 'H', 18: 'I', 19: 'K', 
@@ -16,10 +38,7 @@ class_mapping = {
     50: 'q', 51: 'r', 52: 's', 53: 't', 54: 'u', 55: 'v', 56: 'w', 57: 'x', 58: 'y', 59: 'z'
 }
 
-app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Required for session management
-CORS(app)
-app.config['UPLOAD_FOLDER'] = 'uploads'
+
 
 def get_latest_predict_folder():
     predict_folders = [f for f in os.listdir(os.path.join(os.getcwd(), "runs", "detect")) if f.startswith("predict")]
@@ -186,20 +205,6 @@ def display_latest_image():
             return send_from_directory(predict_folder, latest_image)
     return "No image found"
 
-@app.route('/chat', methods=['POST'])
-def chat():
-    user_message = request.json.get('message')
-
-    # Retrieve and update conversation history
-    chat_history = session.get('chat_history', [])
-    chat_history.append(user_message)
-
-    response = get_chatbot_response(user_message)
-    
-    # Save updated history back to session
-    session['chat_history'] = chat_history
-    
-    return jsonify({"response": response})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
