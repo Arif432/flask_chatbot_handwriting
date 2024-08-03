@@ -2,7 +2,7 @@
 *.pt
 
 # Ignore the run folder
-runs/
+runs/detect/*
 
 # Ignore the uploads folder
 uploads/
