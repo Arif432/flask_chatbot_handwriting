@@ -7,6 +7,15 @@ from ultralytics import YOLO
 from flask_cors import CORS
 from chatbot_service import get_chatbot_response  # Import chatbot function
 
+class_mapping = {
+    0: '0', 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 
+    10: 'A', 11: 'B', 12: 'C', 13: 'D', 14: 'E', 15: 'F', 16: 'G', 17: 'H', 18: 'I', 19: 'K', 
+    20: 'L', 21: 'M', 22: 'N', 23: 'O', 24: 'P', 25: 'Q', 26: 'R', 27: 'S', 28: 'T', 29: 'U', 
+    30: 'V', 31: 'X', 32: 'Y', 33: 'Z', 34: 'a', 35: 'b', 36: 'c', 37: 'd', 38: 'e', 39: 'f', 
+    40: 'g', 41: 'h', 42: 'i', 43: 'j', 44: 'k', 45: 'l', 46: 'm', 47: 'n', 48: 'o', 49: 'p', 
+    50: 'q', 51: 'r', 52: 's', 53: 't', 54: 'u', 55: 'v', 56: 'w', 57: 'x', 58: 'y', 59: 'z'
+}
+
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Required for session management
 CORS(app)
