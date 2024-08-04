@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 from PIL import Image, ImageEnhance, ImageFilter
 from ultralytics import YOLO
 from flask_cors import CORS
-from chatbot_service import get_chatbot_response  # Import chatbot function
+from chatbot_service import get_chatbot_response,ask_gemini  # Import chatbot function
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Required for session management
@@ -14,14 +14,21 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    print("hello")
-    user_message = request.json.get('message')
+    user_message = request.form.get('message')
+    file = request.files.get('file')
 
     # Retrieve and update conversation history
     chat_history = session.get('chat_history', [])
     chat_history.append(user_message)
 
-    response = get_chatbot_response(user_message)
+    if file:
+        try:
+            file_content = file.read()  # This is bytes-like
+            response = ask_gemini(file_content, request.form.get('question'))
+        except ValueError as e:
+            response = str(e)
+    else:
+        response = get_chatbot_response(user_message)
     
     # Save updated history back to session
     session['chat_history'] = chat_history
