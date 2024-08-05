@@ -40,7 +40,7 @@ prompt_template = ChatPromptTemplate(
             "ask for past reports, or conduct medical tests if needed but ignore if not provided."
             "Ask only one question at a time. Do not repeat any questions. Keep track of the information provided and adapt your questions accordingly."
             "If the conversation is sufficient for a diagnosis, provide a conclusion and recommendation always with a heading of 'SUMMARY'."
-            "Only help user with these 3 diseases otherwise just say 'I can't help with that.' Don't waste time on those questions."
+            "Only help user with these 3 diseases"
         )),
         MessagesPlaceholder(variable_name='chat_history'),
         HumanMessagePromptTemplate.from_template("{input}")
@@ -52,7 +52,7 @@ chain = LLMChain(
     llm=llm,
     prompt=prompt_template,
     memory=memory,
-    verbose=False
+    verbose=True
 )
 
 def process_image(image_file, question):
@@ -91,9 +91,10 @@ def ask_gemini(file_content, question=None):
     file_ext = request.files.get('file').filename.lower().split('.')[-1]
 
     if file_ext in ['jpeg', 'jpg', 'png']:
-        # if not is_relevant_content(question or "", relevant_keywords):
+        raise ValueError("Image content is not supported for now . Uplod pdf")
+        # message_content = process_image(BytesIO(file_content), question)
+        # if not is_relevant_content(message_content , relevant_keywords):
         #     raise ValueError("Image content is not related to Bot expertise.")
-        message_content = process_image(BytesIO(file_content), question)
     elif file_ext == 'pdf':
         pdf_text = process_pdf(BytesIO(file_content))
         if not is_relevant_content(pdf_text, relevant_keywords):
