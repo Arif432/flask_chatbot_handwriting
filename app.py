@@ -24,7 +24,9 @@ def chat():
     if file:
         try:
             file_content = file.read()  # This is bytes-like
-            response = ask_gemini(file_content, request.form.get('question'))
+            # response = ask_gemini(file_content, request.form.get('message'))
+            response = ask_gemini(file_content)
+
         except ValueError as e:
             response = str(e)
     else:
@@ -154,9 +156,9 @@ def process_yolo_output(file_path):
     print(f"Concatenated result: {concatenated_result}")  # Debug statement
     return concatenated_result
 
-@app.route('/')
-def hello():
-    return render_template('index.html')
+# @app.route('/')
+# def hello():
+#     return render_template('index.html')
 
 @app.route('/predict_img', methods=['POST'])
 def predict_img():
@@ -201,16 +203,16 @@ def predict_img():
     
     return "Prediction failed"
 
-@app.route('/display_latest_image')
-def display_latest_image():
-    predict_folder = get_latest_predict_folder()
-    if predict_folder:
-        images = [f for f in os.listdir(predict_folder) if f.endswith(".jpg")]
-        if images:
-            images.sort(key=lambda x: os.path.getmtime(os.path.join(predict_folder, x)), reverse=True)
-            latest_image = images[0]
-            return send_from_directory(predict_folder, latest_image)
-    return "No image found"
+# @app.route('/display_latest_image')
+# def display_latest_image():
+#     predict_folder = get_latest_predict_folder()
+#     if predict_folder:
+#         images = [f for f in os.listdir(predict_folder) if f.endswith(".jpg")]
+#         if images:
+#             images.sort(key=lambda x: os.path.getmtime(os.path.join(predict_folder, x)), reverse=True)
+#             latest_image = images[0]
+#             return send_from_directory(predict_folder, latest_image)
+#     return "No image found"
 
 
 if __name__ == '__main__':
