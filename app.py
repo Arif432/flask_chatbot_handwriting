@@ -3,14 +3,101 @@ import pickle
 from flask import Flask, render_template, request, send_from_directory, url_for, jsonify, session
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageEnhance, ImageFilter
+from bson import ObjectId
+import datetime
 from ultralytics import YOLO
 from flask_cors import CORS
 from chatbot_service import get_chatbot_response,ask_gemini  # Import chatbot function
+from pymongo import MongoClient
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Required for session management
+
+client = MongoClient("mongodb+srv://MuhammadArifNawaz:03006340067@task-manager-2nd.mesyzb7.mongodb.net/")
+db = client.doctorsHealthSystem  # Replace 'mydatabase' with your database name
+appointments_collection = db.appointments  # Replace 'mycollection' with your collection name
+
 CORS(app)
 app.config['UPLOAD_FOLDER'] = 'uploads'
+
+# def convert_to_serializable(data):
+#     if isinstance(data, list):
+#         return [convert_to_serializable(item) for item in data]
+#     elif isinstance(data, dict):
+#         for key, value in data.items():
+#             data[key] = convert_to_serializable(value)
+#         return data
+#     elif isinstance(data, ObjectId):
+#         return str(data)
+#     elif isinstance(data, datetime.datetime):
+#         return data.isoformat()
+#     return data
+
+# @app.route('/appointment', methods=['GET'])
+# def get_all_data():
+#     data = list(appointment_collection.find())
+#     data = convert_to_serializable(data)  # Convert to JSON serializable format
+#     print("Fetched Records:", data)  # Print fetched records to console
+#     return jsonify(data)
+
+
+def get_session_id(output_contexts):
+    # Extract session_id from outputContexts
+    for context in output_contexts:
+        if 'parameters' in context:
+            return context['name'].split('/contexts/')[0].split('/')[-1]
+    return None
+
+def create_appointment(parameters, session_id):
+    appointment = {
+        "session_id": session_id,
+        "title":parameters.get('title'),
+        "doctor": parameters.get('doctor'),
+        "patient": parameters.get('patient'),
+        "date": parameters.get('date'),
+        "selectedTimeSlot": parameters.get('selectedTimeSlot'),
+        "appointmentStatus": "scheduled",
+        "description": parameters.get('description')
+    }
+    result = appointments_collection.insert_one(appointment)
+    return {"fulfillmentText": f"Appointment created successfully with ID: {str(result.inserted_id)}"}
+
+def cancel_appointment(parameters, session_id):
+    appointment_id = parameters.get('appointment_id')
+    result = appointments_collection.update_one(
+        {"_id": ObjectId(appointment_id), "session_id": session_id},
+        {"$set": {"status": "canceled"}}
+    )
+    if result.matched_count > 0:
+        return {"fulfillmentText": "Appointment canceled successfully."}
+    else:
+        return {"fulfillmentText": "No matching appointment found."}
+
+@app.route('/', methods=['POST'])
+def webhook_handler():
+    req = request.get_json(silent=True, force=True)
+    
+    intent = req.get('queryResult').get('intent').get('displayName')
+    print(f"Received intent: {intent}")
+    
+    parameters = req.get('queryResult').get('parameters')
+    output_contexts = req.get('queryResult').get('outputContexts')
+    
+    session_id = get_session_id(output_contexts)
+    
+    if intent == "2-Appointment Add context-ongoing":
+        response = create_appointment(parameters, session_id)
+        return jsonify({"fulfillmentText": f"Recieved == {intent} == in the beckend"})
+    
+    elif intent == "6-tracking context ongoing tracking":
+        response = cancel_appointment(parameters, session_id)
+        return jsonify({"fulfillmentText": f"Recieved == {intent} == in the beckend"})
+    else:
+        response = {"fulfillmentText": "Unknown intent."}
+    
+    return jsonify(response)
+
+
 
 @app.route('/chat', methods=['POST'])
 def chat():
