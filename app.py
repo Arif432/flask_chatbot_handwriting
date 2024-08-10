@@ -74,7 +74,8 @@ def cancel_appointment(parameters, session_id):
         return {"fulfillmentText": "No matching appointment found."}
 
 def track_order(parameters):
-    appointment_id = parameters.get('_id')
+    print(parameters)
+    appointment_id = parameters.get('any')
     
     # Find the appointment by its ID (without checking session ID)
     appointment = appointments_collection.find_one({"_id": ObjectId(appointment_id)})
