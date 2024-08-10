@@ -54,7 +54,7 @@ def create_appointment(parameters, session_id):
         "title":parameters.get('title'),
         "doctor": parameters.get('doctor'),
         "patient": parameters.get('patient'),
-        "date": parameters.get('date'),
+        "date": parameters.get('date-time'),
         "selectedTimeSlot": parameters.get('selectedTimeSlot'),
         "appointmentStatus": "scheduled",
         "description": parameters.get('description')
@@ -63,15 +63,45 @@ def create_appointment(parameters, session_id):
     return {"fulfillmentText": f"Appointment created successfully with ID: {str(result.inserted_id)}"}
 
 def cancel_appointment(parameters, session_id):
-    appointment_id = parameters.get('appointment_id')
+    appointment_id = parameters.get('any')
     result = appointments_collection.update_one(
         {"_id": ObjectId(appointment_id), "session_id": session_id},
-        {"$set": {"status": "canceled"}}
+        {"$set": {"appointmentStatus": "canceled"}}
     )
     if result.matched_count > 0:
         return {"fulfillmentText": "Appointment canceled successfully."}
     else:
         return {"fulfillmentText": "No matching appointment found."}
+
+def track_order(parameters):
+    appointment_id = parameters.get('_id')
+    
+    # Find the appointment by its ID (without checking session ID)
+    appointment = appointments_collection.find_one({"_id": ObjectId(appointment_id)})
+    
+    if appointment:
+        # Extract appointment details
+        title = appointment.get("title", "No title available")
+        description = appointment.get("description", "No description available")
+        fee = appointment.get("fee", "No fee information available")
+        date = appointment.get("date", "No date available")
+        selected_time_slot = appointment.get("selectedTimeSlot", "No time slot selected")
+        status = appointment.get("appointmentStatus", "Unknown")
+
+        # Construct the response
+        response_text = (
+            f"Appointment Details:\n"
+            f"Title: {title}\n"
+            f"Description: {description}\n"
+            f"Fee: {fee}\n"
+            f"Date: {date}\n"
+            f"Selected Time Slot: {selected_time_slot}\n"
+            f"Status: {status}"
+        )
+
+        return {"fulfillmentText": response_text}
+    else:
+        return {"fulfillmentText": "No appointment found with the provided ID."}
 
 @app.route('/', methods=['POST'])
 def webhook_handler():
@@ -87,17 +117,21 @@ def webhook_handler():
     
     if intent == "2-Appointment Add context-ongoing":
         response = create_appointment(parameters, session_id)
-        return jsonify({"fulfillmentText": f"Recieved == {intent} == in the beckend"})
     
     elif intent == "6-tracking context ongoing tracking":
+        # response = track_order(parameters, session_id)
+        response = track_order(parameters)
+
+       
+    elif intent == '3-cancel-appointment context-ongoing':
         response = cancel_appointment(parameters, session_id)
-        return jsonify({"fulfillmentText": f"Recieved == {intent} == in the beckend"})
+        # response = cancel_appointment(parameters)
+
+    
     else:
         response = {"fulfillmentText": "Unknown intent."}
     
     return jsonify(response)
-
-
 
 @app.route('/chat', methods=['POST'])
 def chat():
