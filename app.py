@@ -60,6 +60,7 @@ def create_appointment(parameters, session_id):
         "description": parameters.get('description')
     }
     result = appointments_collection.insert_one(appointment)
+    print(result)
     return {"fulfillmentText": f"Appointment created successfully with ID: {str(result.inserted_id)}"}
 
 def cancel_appointment(parameters, session_id):
@@ -106,33 +107,41 @@ def track_order(parameters):
 
 @app.route('/', methods=['POST'])
 def webhook_handler():
-    req = request.get_json(silent=True, force=True)
-    
-    intent = req.get('queryResult').get('intent').get('displayName')
-    print(f"Received intent: {intent}")
-    
-    parameters = req.get('queryResult').get('parameters')
-    output_contexts = req.get('queryResult').get('outputContexts')
-    
-    session_id = get_session_id(output_contexts)
-    
-    if intent == "2-Appointment Add context-ongoing":
-        response = create_appointment(parameters, session_id)
-    
-    elif intent == "6-tracking context ongoing tracking":
-        # response = track_order(parameters, session_id)
-        response = track_order(parameters)
+    try:
+        req = request.get_json(silent=True, force=True)
+        print(f"Request received: {req}")  # Log the entire request payload
 
-       
-    elif intent == '3-cancel-appointment context-ongoing':
-        response = cancel_appointment(parameters, session_id)
-        # response = cancel_appointment(parameters)
+        intent = req.get('queryResult', {}).get('intent', {}).get('displayName', '')
+        print(f"Received intent: {intent}")
 
-    
-    else:
-        response = {"fulfillmentText": "Unknown intent."}
-    
-    return jsonify(response)
+        parameters = req.get('queryResult', {}).get('parameters', {})
+        print(f"Parameters: {parameters}")
+
+        output_contexts = req.get('queryResult', {}).get('outputContexts', [])
+        print(f"Output contexts: {output_contexts}")
+
+        session_id = get_session_id(output_contexts)
+        print(f"Session ID: {session_id}")
+
+        if intent == "2-Appointment Add context-ongoing":
+            response = create_appointment(parameters, session_id)
+        
+        elif intent == "6-tracking context ongoing tracking":
+            response = track_order(parameters)
+
+        elif intent == '3-cancel-appointment context-ongoing':
+            response = cancel_appointment(parameters, session_id)
+        
+        else:
+            response = {"fulfillmentText": "Unknown intent."}
+
+        print(f"Response: {response}")  # Log the response
+        return jsonify(response)
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({"fulfillmentText": "An error occurred while processing your request."})
+
 
 @app.route('/chat', methods=['POST'])
 def chat():
