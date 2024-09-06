@@ -12,7 +12,7 @@ import os
 import pypdf
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # Secure your Flask session
+app.secret_key = os.urandom(24)
 
 # Load environment variables
 load_dotenv(find_dotenv(), override=True)
@@ -20,40 +20,39 @@ load_dotenv(find_dotenv(), override=True)
 # Initialize the LLM
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
 
-# Initialize FileChatMessageHistory
 history = FileChatMessageHistory('chat_history.json')
 
-# Initialize ConversationBufferMemory with FileChatMessageHistory
 memory = ConversationBufferMemory(
     memory_key='chat_history',
     chat_memory=history,
     return_messages=True
 )
 
-# Create a prompt template
 prompt_template = ChatPromptTemplate(
     messages=[
-        HumanMessage(content=(
-            "You are a diabetes, kidney, and heart specialist doctor and need to diagnose the user's condition."
-            "Do an in-depth conversation like an expert."
-            "Strictly don't just simply recommend them to see a doctor for just SOME symptoms, ask for medical history"
-            "ask for past reports, or conduct medical tests if needed but ignore if not provided."
-            "strictly Ask only one question at a time. Do not repeat any questions. Keep track of the information provided and adapt your questions accordingly."
-            "Based on provided information, give recommendations and summary. Summary should include rating of patient condition out of 100"
-            "It's very important to rate patient condition"
-            "- 0-20: Very Mild"
-            "- 21-40: Mild"
-            "- 41-60: Moderate"
-            "- 61-80: Severe"
-            "- 81-100: Very Severe"
-            "Only help user with these 3 diseases."
-        )),
-        MessagesPlaceholder(variable_name='chat_history'),
+   HumanMessage(content=(
+    "You are a specialist doctor in diabetes, kidney, and heart conditions, tasked with diagnosing the user's health status. "
+    "Conduct a thorough, expert-level conversation. "
+    "Strictly do not simply refer the user to a doctor for minor symptoms. Request their medical history and past reports when necessary, "
+    "or conduct medical tests if needed, but proceed without them if unavailable. "
+    "Strictly ask only one question at a time. Do not repeat any questions. Keep track of the information provided and adapt your questions accordingly. "
+    "Based on the provided information, both recommendations and a summary should be inside the [SUMMARY] section. "
+    "The summary heading should be formatted as [SUMMARY]. "
+    "The user's condition severity should be rated under [PRIORITY]. "
+    "Rate [PRIORITY] according to these criteria: "
+    "- 0-20: Very Mild "
+    "- 21-40: Mild "
+    "- 41-60: Moderate "
+    "- 61-80: Severe "
+    "- 81-100: Very Severe. "
+    "If more than one disease is suspected, provide a detailed probability percentage for each disease (diabetes, kidney, heart) based on the provided information. "
+    "Format the output clearly as 'Disease: Probability%' for each suspected condition. "
+    "Only assist the user with diabetes, kidney, and heart diseases."
+)),MessagesPlaceholder(variable_name='chat_history'),
         HumanMessagePromptTemplate.from_template("{input}")
     ]
 )
 
-# Initialize the LLMChain
 chain = LLMChain(
     llm=llm,
     prompt=prompt_template,
@@ -90,18 +89,13 @@ def is_relevant_content(content, keywords):
             return True
     return False
 
-# def ask_gemini(file_content, question=None):
 def ask_gemini(file_content):
     relevant_keywords = ["diabetes", "kidney", "heart",'blood pressure', "sugar"]
 
-    # Determine the file extension from the filename
     file_ext = request.files.get('file').filename.lower().split('.')[-1]
 
     if file_ext in ['jpeg', 'jpg', 'png']:
         raise ValueError("Image content is not supported for now . Upload pdf")
-        # message_content = process_image(BytesIO(file_content), question)
-        # if not is_relevant_content(message_content , relevant_keywords):
-        #     raise ValueError("Image content is not related to Bot expertise.")
     elif file_ext == 'pdf':
         pdf_text = process_pdf(BytesIO(file_content))
         if not is_relevant_content(pdf_text, relevant_keywords):
