@@ -10,6 +10,10 @@ import base64
 from io import BytesIO
 import os
 import pypdf
+import re
+import requests
+from datetime import datetime
+
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -110,10 +114,72 @@ def ask_gemini(file_content):
     memory.chat_memory.add_ai_message(AIMessage(content=response.content))
     return response.content
 
-def get_chatbot_response(user_message):
+# Function to extract [SUMMARY] section
+import requests
+
+# Function to post the summary to the Flask backend
+def post_summary_to_backend(patient_id, summary):
     try:
+        # URL of your Flask backend route
+        print("post beckend",patient_id)
+        url = "http://192.168.100.132:8082/post_summary"
+        data = {
+            "patientID": patient_id,
+            "summary": summary,
+            "date":datetime.now().isoformat() 
+
+        }
+        # Send the POST request to the Flask backend
+        response = requests.post(url, json=data)
+
+        # Check if the request was successful
+        if response.status_code == 201:
+            print("Summary saved successfully.")
+        else:
+            print(f"Failed to save summary: {response.json()}")
+
+    except Exception as e:
+        print(f"Error posting summary to backend: {e}")
+
+# Function to extract summary from chatbot's response
+def extract_summary(response_text):
+    summary_match = re.search(r'\[SUMMARY\](.*?)\[PRIORITY\]', response_text, re.DOTALL)
+    if summary_match:
+        return summary_match.group(1).strip()
+    return "No summary found"
+
+# Function to extract [PRIORITY] section
+def extract_priority(response_text):
+    priority_match = re.search(r'\[PRIORITY\](.*)', response_text, re.DOTALL)
+    if priority_match:
+        return priority_match.group(1).strip()
+    return "No priority found"
+
+# Main function to handle chatbot response
+def get_chatbot_response(user_message, patient_id):
+    try:
+        # Get the chatbot response
+        print("get bot res",patient_id)
         response = chain.invoke({'input': user_message})
-        return response['text']
+        response_text = response['text']
+        
+        # Extract the summary from the response
+        summary = extract_summary(response_text)
+        
+        if summary:
+            # Log the summary
+            print(f"[SUMMARY]:\n{summary}\n")
+
+            # Automatically post the summary to the Flask backend with patient ID
+            post_summary_to_backend(patient_id, summary)
+        
+        # Extract and log priority (for logging purposes)
+        priority = extract_priority(response_text)
+        if priority:
+            print(f"[PRIORITY]:\n{priority}\n")
+        
+        return response_text
+
     except Exception as e:
         print(f"Error in chatbot response: {e}")
         return "Sorry, there was an error processing your request."

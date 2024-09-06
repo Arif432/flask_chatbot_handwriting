@@ -16,6 +16,7 @@ app.secret_key = 'your_secret_key'  # Required for session management
 client = MongoClient("mongodb+srv://MuhammadArifNawaz:03006340067@task-manager-2nd.mesyzb7.mongodb.net/")
 db = client.doctorsHealthSystem  # Replace 'mydatabase' with your database name
 appointments_collection = db.appointments  # Replace 'mycollection' with your collection name
+summeries_collection = db["summaries"]
 
 CORS(app)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -146,6 +147,8 @@ def webhook_handler():
 @app.route('/chat', methods=['POST'])
 def chat():
     user_message = request.form.get('message')
+    patient_id = request.form.get("patient_id")
+    print("chete",patient_id)
     file = request.files.get('file')
 
     # Retrieve and update conversation history
@@ -161,12 +164,34 @@ def chat():
         except ValueError as e:
             response = str(e)
     else:
-        response = get_chatbot_response(user_message)
+        response = get_chatbot_response(user_message,patient_id)
     
     # Save updated history back to session
     session['chat_history'] = chat_history
     
     return jsonify({"response": response})
+
+@app.route('/post_summary', methods=['POST'])
+def post_summary():
+    try:
+        data = request.json
+        patient_id = data.get('patient_id')
+        print("post",patient_id)
+        summary = data.get('summary')
+        
+        if not patient_id or not summary:
+            return jsonify({"error": "patient_id and summary are required"}), 400
+
+        # Store the summary in the 'summeries' collection with the patient ID
+        summeries_collection.insert_one({
+            "patient_id": patient_id,
+            "summary": summary
+        })
+
+        return jsonify({"message": "Summary saved successfully"}), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 class_mapping = {
