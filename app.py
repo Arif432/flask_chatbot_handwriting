@@ -195,8 +195,30 @@ def post_summary():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/post_priority', methods=['POST'])
+def post_priority():
+    try:
+        data = request.json
+        patient_id = data.get('patient')  # This matches the client-side key
+        print("Received patientID:", patient_id)
+        priority = data.get('priority')
+        print("Received summary:", priority)
+        
+        if not patient_id or not priority:
+            return jsonify({"error": "patientID and summary are required"}), 400
 
+        # Store the summary in the 'summaries' collection with the patient ID
+        appointments_collection.insert_one({
+            "patient": patient_id,
+            "priority": priority,
+            "date": datetime.now(timezone.utc) 
+        })
 
+        return jsonify({"message": "Summary saved successfully"}), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 class_mapping = {
     0: '0', 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 

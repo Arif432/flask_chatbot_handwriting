@@ -35,22 +35,22 @@ memory = ConversationBufferMemory(
 prompt_template = ChatPromptTemplate(
     messages=[
    HumanMessage(content=(
-    "You are a specialist doctor in diabetes, kidney, and heart conditions, tasked with diagnosing the user's health status. "
+    "You are a specialist doctor in diabetes, kidney, and heart conditions, tasked with diagnosing the user's health status."
     "Conduct a thorough, expert-level conversation. "
-    "Strictly do not simply refer the user to a doctor for minor symptoms. Request their medical history and past reports when necessary, "
-    "or conduct medical tests if needed, but proceed without them if unavailable. "
-    "Strictly ask only one question at a time. Do not repeat any questions. Keep track of the information provided and adapt your questions accordingly. "
-    "Based on the provided information, both recommendations and a summary should be inside the [SUMMARY] section. "
-    "The summary heading should be formatted as [SUMMARY]. "
-    "The user's condition severity should be rated under [PRIORITY]. "
+    "Strictly do not simply refer the user to a doctor for minor symptoms. Request their medical history and past reports when necessary,"
+    "or conduct medical tests if needed, but proceed without them if unavailable."
+    "Strictly ask only one question at a time. Do not repeat any questions. Keep track of the information provided and adapt your questions accordingly."
+    "Based on the provided information, both recommendations and a summary should be inside the [SUMMARY] section."
+    "The summary heading should be formatted as [SUMMARY]."
+    "The user's condition severity should be rated under [PRIORITY]."
     "Rate [PRIORITY] according to these criteria: "
-    "- 0-20: Low "
-    "- 21-40: Mild "
-    "- 41-60: Moderate "
-    "- 61-80: Severe "
-    "- 81-100: Very Severe. "
-    "If more than one disease is suspected, provide a detailed probability percentage for each disease (diabetes, kidney, heart) based on the provided information. "
-    "Format the output clearly as 'Disease: Probability%' for each suspected condition. "
+    "- 0-20: Low"
+    "- 21-40: Mild"
+    "- 41-60: Moderate"
+    "- 61-80: Severe"
+    "- 81-100: Very Severe."
+    "If more than one disease is suspected, provide a detailed probability percentage for each disease (diabetes, kidney, heart) based on the provided information."
+    "Format the output clearly as 'Disease: Probability%' for each suspected condition."
     "Only assist the user with diabetes, kidney, and heart diseases."
 )),MessagesPlaceholder(variable_name='chat_history'),
         HumanMessagePromptTemplate.from_template("{input}")
@@ -145,6 +145,33 @@ def post_summary_to_backend(patient_id, summary):
     except Exception as e:
         print(f"Error posting summary to backend: {e}")
 
+def post_priority_to_backend(patient_id, priority):
+    try:
+        # URL of your Flask backend route
+        print("Posting to backend:", patient_id, priority)
+        url = "http://192.168.100.132:8082/post_priority"
+        data = {
+            "patient": patient_id,  # Ensure this matches the server-side key
+            "priority":priority,
+        }
+
+        # Send the POST request to the Flask backend
+        response = requests.post(url, json=data)
+
+        # Check if the request was successful
+        if response.status_code == 201:
+            print("priority saved successfully.")
+        else:
+            # Attempt to parse JSON response
+            try:
+                print(f"Failed to save priority: {response.json()}")
+            except ValueError:
+                # In case the response is not JSON
+                print(f"Failed to save proority: {response.text}")
+
+    except Exception as e:
+        print(f"Error posting proority to backend: {e}")
+
 # Function to extract summary from chatbot's response
 def extract_summary(response_text):
     summary_match = re.search(r'\[SUMMARY\](.*?)\[PRIORITY\]', response_text, re.DOTALL)
@@ -179,8 +206,11 @@ def get_chatbot_response(user_message, patient_id):
         
         # Extract and log priority (for logging purposes)
         priority = extract_priority(response_text)
+
+        
         if priority:
             print(f"[PRIORITY]:\n{priority}\n")
+            post_priority_to_backend(patient_id, priority)
         
         return response_text
 
