@@ -12,7 +12,7 @@ import os
 import pypdf
 import re
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 app = Flask(__name__)
@@ -44,7 +44,7 @@ prompt_template = ChatPromptTemplate(
     "The summary heading should be formatted as [SUMMARY]. "
     "The user's condition severity should be rated under [PRIORITY]. "
     "Rate [PRIORITY] according to these criteria: "
-    "- 0-20: Very Mild "
+    "- 0-20: Low "
     "- 21-40: Mild "
     "- 41-60: Moderate "
     "- 61-80: Severe "
@@ -121,14 +121,13 @@ import requests
 def post_summary_to_backend(patient_id, summary):
     try:
         # URL of your Flask backend route
-        print("post beckend",patient_id)
+        print("Posting to backend:", patient_id, summary)
         url = "http://192.168.100.132:8082/post_summary"
         data = {
-            "patientID": patient_id,
+            "patientID": patient_id,  # Ensure this matches the server-side key
             "summary": summary,
-            "date":datetime.now().isoformat() 
-
         }
+
         # Send the POST request to the Flask backend
         response = requests.post(url, json=data)
 
@@ -136,7 +135,12 @@ def post_summary_to_backend(patient_id, summary):
         if response.status_code == 201:
             print("Summary saved successfully.")
         else:
-            print(f"Failed to save summary: {response.json()}")
+            # Attempt to parse JSON response
+            try:
+                print(f"Failed to save summary: {response.json()}")
+            except ValueError:
+                # In case the response is not JSON
+                print(f"Failed to save summary: {response.text}")
 
     except Exception as e:
         print(f"Error posting summary to backend: {e}")

@@ -9,6 +9,7 @@ from ultralytics import YOLO
 from flask_cors import CORS
 from chatbot_service import get_chatbot_response,ask_gemini  # Import chatbot function
 from pymongo import MongoClient
+from datetime import datetime, timezone
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Required for session management
@@ -175,23 +176,26 @@ def chat():
 def post_summary():
     try:
         data = request.json
-        patient_id = data.get('patient_id')
-        print("post",patient_id)
+        patient_id = data.get('patientID')  # This matches the client-side key
+        print("Received patientID:", patient_id)
         summary = data.get('summary')
+        print("Received summary:", summary)
         
         if not patient_id or not summary:
-            return jsonify({"error": "patient_id and summary are required"}), 400
+            return jsonify({"error": "patientID and summary are required"}), 400
 
-        # Store the summary in the 'summeries' collection with the patient ID
+        # Store the summary in the 'summaries' collection with the patient ID
         summeries_collection.insert_one({
-            "patient_id": patient_id,
-            "summary": summary
+            "patientID": patient_id,
+            "summary": summary,
+            "date": datetime.now(timezone.utc) 
         })
 
         return jsonify({"message": "Summary saved successfully"}), 201
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 
 class_mapping = {
