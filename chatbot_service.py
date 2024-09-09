@@ -23,7 +23,6 @@ load_dotenv(find_dotenv(), override=True)
 
 # Initialize the LLM
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
-
 history = FileChatMessageHistory('chat_history.json')
 
 memory = ConversationBufferMemory(
@@ -207,11 +206,11 @@ def extract_summary(response_text):
     return "No summary found"
 
 # Function to extract [PRIORITY] section
-def extract_priority(response_text):
-    priority_match = re.search(r'\[PRIORITY\](.*)', response_text, re.DOTALL)
-    if priority_match:
-        return priority_match.group(1).strip()
-    return "No priority found"
+# def extract_priority(response_text):
+#     priority_match = re.search(r'\[PRIORITY\](.*)', response_text, re.DOTALL)
+#     if priority_match:
+#         return priority_match.group(1).strip()
+#     return "No priority found"
 
 # Function to extract [DISEASE] section
 # def extract_disease(response_text):
@@ -225,6 +224,10 @@ def extract_priority(response_text):
 def get_chatbot_response(user_message, patient_id):
     try:
         # Get the chatbot response
+        if not os.path.exists('chat_history.json'):
+            with open('chat_history.json', 'w') as f:
+                f.write('{}') 
+
         print("get bot res",patient_id)
         response = chain.invoke({'input': user_message})
         response_text = response['text']
@@ -238,14 +241,18 @@ def get_chatbot_response(user_message, patient_id):
 
             # Automatically post the summary to the Flask backend with patient ID
             post_summary_to_backend(patient_id, summary)
+
+            if os.path.exists('chat_history.json'):
+                os.remove('chat_history.json')
+                print("chat_history.json file deleted.")
         
         # Extract and log priority (for logging purposes)
-        priority = extract_priority(response_text)
+        # priority = extract_priority(response_text)
 
         
-        if priority != "No priority found":
-            print(f"[PRIORITY]:\n{priority}\n")
-            post_priority_to_backend(patient_id, priority)
+        # if priority != "No priority found":
+        #     print(f"[PRIORITY]:\n{priority}\n")
+        #     post_priority_to_backend(patient_id, priority)
 
         # disease = extract_disease(response_text)
 
