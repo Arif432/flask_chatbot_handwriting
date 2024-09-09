@@ -35,6 +35,7 @@ memory = ConversationBufferMemory(
 prompt_template = ChatPromptTemplate(
     messages=[
    HumanMessage(content=(
+    "Don't claim you are not medical professional or something sounds like that"
     "You are a specialist doctor in diabetes, kidney, and heart conditions, tasked with diagnosing the user's health status."
     "Conduct a thorough, expert-level conversation. "
     "Strictly do not simply refer the user to a doctor for minor symptoms. Request their medical history and past reports when necessary,"
@@ -50,7 +51,7 @@ prompt_template = ChatPromptTemplate(
     "- 61-80: Severe"
     "- 81-100: Very Severe."
     "If more than one disease is suspected, provide a detailed probability percentage for each disease (diabetes, kidney, heart) based on the provided information."
-    "Format the output clearly as 'Disease: Probability%' for each suspected condition."
+    "Format the output strictly as [Disease] for each suspected condition."
     "Only assist the user with diabetes, kidney, and heart diseases."
 )),MessagesPlaceholder(variable_name='chat_history'),
         HumanMessagePromptTemplate.from_template("{input}")
@@ -186,6 +187,14 @@ def extract_priority(response_text):
         return priority_match.group(1).strip()
     return "No priority found"
 
+# Function to extract [DISEASE] section
+def extract_disease(response_text):
+    disease_match = re.search(r'\[DISEASE\](.*?)\[SUMMARY\]', response_text, re.DOTALL)
+    if disease_match:
+        return disease_match.group(1).strip()
+    return "No disease found"
+
+
 # Main function to handle chatbot response
 def get_chatbot_response(user_message, patient_id):
     try:
@@ -197,7 +206,7 @@ def get_chatbot_response(user_message, patient_id):
         # Extract the summary from the response
         summary = extract_summary(response_text)
         
-        if summary:
+        if summary != "No summary found":
             # Log the summary
             print(f"[SUMMARY]:\n{summary}\n")
 
@@ -208,7 +217,7 @@ def get_chatbot_response(user_message, patient_id):
         priority = extract_priority(response_text)
 
         
-        if priority:
+        if priority != "No priority found":
             print(f"[PRIORITY]:\n{priority}\n")
             post_priority_to_backend(patient_id, priority)
         
