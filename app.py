@@ -220,6 +220,17 @@ def post_priority():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# @app.route('/get_disease', methods=['GET'])
+# def get_disease():
+#     # Extract the 'disease' query parameter from the URL
+#     disease = request.args.get('disease')  
+#     if disease:
+#         print("Disease received:", disease)
+#         return jsonify({"message": "Disease received successfully", "disease": disease})
+#     else:
+#         return jsonify({"error": "No disease provided"}), 400
+
+
 class_mapping = {
     0: '0', 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 
     10: 'A', 11: 'B', 12: 'C', 13: 'D', 14: 'E', 15: 'F', 16: 'G', 17: 'H', 18: 'I', 19: 'K', 

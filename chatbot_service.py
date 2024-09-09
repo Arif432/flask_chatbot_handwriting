@@ -34,29 +34,35 @@ memory = ConversationBufferMemory(
 
 prompt_template = ChatPromptTemplate(
     messages=[
-   HumanMessage(content=(
-    "Don't claim you are not medical professional or something sounds like that"
-    "You are a specialist doctor in diabetes, kidney, and heart conditions, tasked with diagnosing the user's health status."
-    "Conduct a thorough, expert-level conversation. "
-    "Strictly do not simply refer the user to a doctor for minor symptoms. Request their medical history and past reports when necessary,"
-    "or conduct medical tests if needed, but proceed without them if unavailable."
-    "Strictly ask only one question at a time. Do not repeat any questions. Keep track of the information provided and adapt your questions accordingly."
-    "Based on the provided information, both recommendations and a summary should be inside the [SUMMARY] section."
-    "The summary heading should be formatted as [SUMMARY]."
-    "The user's condition severity should be rated under [PRIORITY]."
-    "Rate [PRIORITY] according to these criteria: "
-    "- 0-20: Low"
-    "- 21-40: Mild"
-    "- 41-60: Moderate"
-    "- 61-80: Severe"
-    "- 81-100: Very Severe."
-    "If more than one disease is suspected, provide a detailed probability percentage for each disease (diabetes, kidney, heart) based on the provided information."
-    "Format the output strictly as [Disease] for each suspected condition."
-    "Only assist the user with diabetes, kidney, and heart diseases."
-)),MessagesPlaceholder(variable_name='chat_history'),
+        HumanMessage(content=(
+            "You are a specialist doctor in diabetes, kidney, and heart conditions. Your role is to diagnose the user's health status based on the information they provide. Conduct a thorough and expert-level medical consultation. "
+            "Under no circumstances should you claim that you are not a medical professional. Provide a comprehensive and professional evaluation yourself. "
+            "Begin by asking the user for their medical history and any relevant past reports. "
+            "If reports are not available, proceed with the information at hand and adapt your questions as needed. "
+            "Adhere to these guidelines: "
+            "- Ask only one question at a time. "
+            "- Do not repeat any questions. "
+            "- Track the information provided and adjust your subsequent questions based on the user's responses. "
+            "- If symptoms or test results indicate multiple conditions, identify and list each suspected condition along with their respective probabilities. "
+            "At the end of the consultation, provide a summary and a condition severity rating based on the user's symptoms and medical information: "
+            "[SUMMARY] "
+            "Provide a summary of the user's condition, focusing on diabetes, kidney, or heart issues. "
+            "[PRIORITY] "
+            "Rate the severity of the condition using the following scale: "
+            "- 0-20: Low "
+            "- 21-40: Mild "
+            "- 41-60: Moderate "
+            "- 61-80: Severe "
+            "- 81-100: Very Severe. "
+            "If multiple conditions are suspected, estimate the probability for each condition: "
+            "[Disease]: "
+            "List the suspected conditions (diabetes, kidney disease, heart disease) and provide a probability percentage for each."
+        )),
+        MessagesPlaceholder(variable_name='chat_history'),
         HumanMessagePromptTemplate.from_template("{input}")
     ]
 )
+
 
 chain = LLMChain(
     llm=llm,
@@ -123,7 +129,7 @@ def post_summary_to_backend(patient_id, summary):
     try:
         # URL of your Flask backend route
         print("Posting to backend:", patient_id, summary)
-        url = "http://192.168.100.132:8082/post_summary"
+        url = "http://10.135.88.170:8082/post_summary"
         data = {
             "patientID": patient_id,  # Ensure this matches the server-side key
             "summary": summary,
@@ -150,7 +156,7 @@ def post_priority_to_backend(patient_id, priority):
     try:
         # URL of your Flask backend route
         print("Posting to backend:", patient_id, priority)
-        url = "http://192.168.100.132:8082/post_priority"
+        url = "http://10.135.88.170:8082/post_priority"
         data = {
             "patient": patient_id,  # Ensure this matches the server-side key
             "priority":priority,
@@ -173,6 +179,26 @@ def post_priority_to_backend(patient_id, priority):
     except Exception as e:
         print(f"Error posting proority to backend: {e}")
 
+def disease_to_ui(disease):
+    try:
+        # URL of your Flask backend route
+        print("Sending disease to backend:", disease)
+        url = "http://10.135.88.170:8082/get_disease"
+        
+        # Send the disease as a query parameter
+        params = {"disease": disease}
+
+        response = requests.get(url, params=params)
+
+        if response.status_code == 200:
+            print("Disease sent successfully")
+            print(response.json())
+        else:
+            print(f"Failed to send disease: {response.status_code} - {response.text}")
+
+    except Exception as e:
+        print(f"Error posting disease to backend: {e}")
+        
 # Function to extract summary from chatbot's response
 def extract_summary(response_text):
     summary_match = re.search(r'\[SUMMARY\](.*?)\[PRIORITY\]', response_text, re.DOTALL)
@@ -188,11 +214,11 @@ def extract_priority(response_text):
     return "No priority found"
 
 # Function to extract [DISEASE] section
-def extract_disease(response_text):
-    disease_match = re.search(r'\[DISEASE\](.*?)\[SUMMARY\]', response_text, re.DOTALL)
-    if disease_match:
-        return disease_match.group(1).strip()
-    return "No disease found"
+# def extract_disease(response_text):
+#     disease_match = re.search(r'\[DISEASE\](.*?)\[SUMMARY\]', response_text, re.DOTALL)
+#     if disease_match:
+#         return disease_match.group(1).strip()
+#     return "No disease found"
 
 
 # Main function to handle chatbot response
@@ -220,6 +246,12 @@ def get_chatbot_response(user_message, patient_id):
         if priority != "No priority found":
             print(f"[PRIORITY]:\n{priority}\n")
             post_priority_to_backend(patient_id, priority)
+
+        # disease = extract_disease(response_text)
+
+        # if disease:
+        #     print(f"[dises]:\n{priority}\n")
+        #     disease_to_ui(disease)
         
         return response_text
 
