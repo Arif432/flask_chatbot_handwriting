@@ -46,6 +46,7 @@ prompt_template = ChatPromptTemplate(
             "At the end of the consultation, provide a summary and a condition severity rating based on the user's symptoms and medical information: "
             "[SUMMARY] "
             "Provide a summary of the user's condition, focusing on diabetes, kidney, or Hypertension issues. "
+            "include every detail like answers to your questions provided by patient in the summary"
             "[PRIORITY] "
             "Rate the severity of the condition using only one of the following scale: "
             "- 0-20: Low "
