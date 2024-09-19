@@ -18,6 +18,8 @@ from datetime import datetime, timezone
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
+server = "http://192.168.100.34:8082"
+
 # Load environment variables
 load_dotenv(find_dotenv(), override=True)
 
@@ -58,10 +60,10 @@ prompt_template = ChatPromptTemplate(
             "[DISEASE]: "
             "List the suspected conditions using only the keywords 'diabetes,' 'kidney,' or 'Hypertension' as main categories."
             "Provide a probability percentage for each."
-            "you should strictly follow one format for disease and probablity forsay"
+            "you should strictly follow one format for disease and probablity and structure is"
             "kidney: 70%"
             "hypertenstion: 20%"
-            "diebtes: 10%"
+            "diabtes: 10%"
             
         )),
         MessagesPlaceholder(variable_name='chat_history'),
@@ -135,7 +137,7 @@ def post_summary_to_backend(patient_id, summary):
     try:
         # URL of your Flask backend route
         print("Posting to backend:", patient_id, summary)
-        url = "http://10.135.88.170:8082/post_summary"
+        url = f"{server}/post_summary"
         data = {
             "patientID": patient_id,  # Ensure this matches the server-side key
             "summary": summary,
@@ -162,7 +164,7 @@ def post_priority_to_backend(patient_id, priority):
     try:
         # URL of your Flask backend route
         print("Posting to backend:", patient_id, priority)
-        url = "http://10.135.88.170:8082/post_priority"
+        url = f"{server}/post_priority"
         data = {
             "patient": patient_id,  # Ensure this matches the server-side key
             "priority":priority,
@@ -189,7 +191,7 @@ def disease_to_ui(disease):
     try:
         # URL of your Flask backend route
         print("Sending disease to backend:", disease)
-        url = "http://10.135.88.170:8082/get_disease"
+        url = f"{server}/get_disease"
         
         # Send the disease as a query parameter
         params = {"disease": disease}
