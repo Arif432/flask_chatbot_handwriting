@@ -1,10 +1,15 @@
 from flask import Flask, request, jsonify, session
 from dotenv import load_dotenv, find_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.memory import ConversationBufferMemory, FileChatMessageHistory
+from langchain.memory import ConversationBufferMemory
+from langchain_community.chat_message_histories import FileChatMessageHistory
 from langchain.chains import LLMChain
-from langchain.schema import HumanMessage, AIMessage
-from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder
+from langchain.schema.messages import HumanMessage, AIMessage
+from langchain.prompts import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder
+)
 from PIL import Image
 import base64
 from io import BytesIO
@@ -18,7 +23,7 @@ from datetime import datetime, timezone
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-server = "http://192.168.100.34:8082"
+server = "http://10.135.9.132:8082"
 
 # Load environment variables
 load_dotenv(find_dotenv(), override=True)
@@ -70,7 +75,6 @@ prompt_template = ChatPromptTemplate(
         HumanMessagePromptTemplate.from_template("{input}")
     ]
 )
-
 
 chain = LLMChain(
     llm=llm,
@@ -214,21 +218,6 @@ def extract_summary(response_text):
         return summary_match.group(1).strip()
     return "No summary found"
 
-# Function to extract [PRIORITY] section
-# def extract_priority(response_text):
-#     priority_match = re.search(r'\[PRIORITY\](.*)', response_text, re.DOTALL)
-#     if priority_match:
-#         return priority_match.group(1).strip()
-#     return "No priority found"
-
-# Function to extract [DISEASE] section
-# def extract_disease(response_text):
-#     disease_match = re.search(r'\[DISEASE\](.*?)\[SUMMARY\]', response_text, re.DOTALL)
-#     if disease_match:
-#         return disease_match.group(1).strip()
-#     return "No disease found"
-
-
 # Main function to handle chatbot response
 def get_chatbot_response(user_message, patient_id):
     try:
@@ -274,3 +263,19 @@ def get_chatbot_response(user_message, patient_id):
     except Exception as e:
         print(f"Error in chatbot response: {e}")
         return "Sorry, there was an error processing your request."
+
+
+
+# Function to extract [PRIORITY] section
+# def extract_priority(response_text):
+#     priority_match = re.search(r'\[PRIORITY\](.*)', response_text, re.DOTALL)
+#     if priority_match:
+#         return priority_match.group(1).strip()
+#     return "No priority found"
+
+# Function to extract [DISEASE] section
+# def extract_disease(response_text):
+#     disease_match = re.search(r'\[DISEASE\](.*?)\[SUMMARY\]', response_text, re.DOTALL)
+#     if disease_match:
+#         return disease_match.group(1).strip()
+#     return "No disease found"

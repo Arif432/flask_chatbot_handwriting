@@ -1,0 +1,12 @@
+langchain
+langchain-core
+langchain-community
+langchain-google-genai
+google-generativeai
+faiss-cpu
+sentence-transformers
+python-dotenv
+Flask
+typing
+PyPDF2
+numpy
